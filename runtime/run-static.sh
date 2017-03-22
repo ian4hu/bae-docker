@@ -1,34 +1,37 @@
 #!/bin/bash
+set -o xtrace
 
 RUNTIME_DIR=/home/admin/runtime
 
 _init_env()
 {
 
-  cp -f /home/admin/runtime/static-web.conf /etc/supervisor/conf.d/
+    # cp -f /home/admin/runtime/static-web.conf /etc/supervisor/conf.d/
+    chmod -R 755 ${RUNTIME_DIR}
+    chown -R admin:admin ${RUNTIME_DIR}
 
-  chmod -R 755 ${RUNTIME_DIR}
-  chown -R admin:admin ${RUNTIME_DIR}
-
-  mkdir -p /var/run/bae/
-  mkdir -p /var/log/bae/
-  chmod 777 /var/run/bae/
-  chmod 777 /var/log/bae/
+    mkdir -p /var/run/bae/
+    mkdir -p /var/log/bae/
+    chmod 777 /var/run/bae/
+    chmod 777 /var/log/bae/
     
-    [ -f /home/bae/.bae_profile ] && {
+    if [ -f /home/bae/.bae_profile ]; then
         . /home/bae/.bae_profile
-    }
+    fi
 
-    [ ! -d /home/bae/app/ ] && {
+    if [ ! -d /home/bae/app/ ]; then 
         mkdir -p /home/bae/app/
         chown bae:bae -R /home/bae/app
-    }
-    [ ! -d /home/admin/cert ] && {
+    fi
+    if [ ! -f /home/bae/app/bae_app_conf.lua ]; then
+        echo 'return 0' > /home/bae/app/bae_app_conf.lua
+    fi
+    if [ ! -d /home/admin/cert ]; then
             rm -rf /home/admin/runtime/lighttpd/conf/conf.d/50-https.conf
-    }
-    [ ! -f /home/admin/cert/ca.pem ] && {
+    fi
+    if [ ! -f /home/admin/cert/ca.pem ]; then
         rm -rf /home/admin/runtime/lighttpd/conf/conf.d/60-https-ca.conf
-    }  
+    fi
 
     USE_USERLIGHTTPD_CONF_CMD='include "/home/bae/app/bae_lighttpd_user.conf"'
     NOUSE_USERLIGHTTPD_CONF_CMD='#include_user_lighttpd.conf'
@@ -50,30 +53,17 @@ _init_env()
 _start()
 {
     _init_env
-
-    /etc/init.d/supervisor start
-    for i in `seq 15`
-    do
-        sleep 2;
-        ps auxf |grep -v grep | grep "^admin.*lighttpd .*" >/dev/null 2>&1
-        if [ $? -ne 0 ]; then
-                continue;
-        fi
-        chmod a+rw /home/bae/log/* 2>/dev/null
-        break;
-    done
-    [ $? -ne 0 ] && {
-        return 1
-    }
+    cd /home/admin/runtime
+    /home/admin/runtime/lighttpd/bin/lighttpd -f /home/admin/runtime/lighttpd/conf/lighttpd.conf -m /home/admin/runtime/lighttpd/lib  -D
     return 0
 }
 
 _stop() {
     /etc/init.d/supervisor stop
-    [ $? -ne 0 ] && {
+    if [ $? -ne 0 ]; then
         sleep 1
         /etc/init.d/supervisor stop
-    }
+    fi
     sleep 1
     killall -9 supervisord 2>/dev/null
     killall -9 lighttpd 2>/dev/null
