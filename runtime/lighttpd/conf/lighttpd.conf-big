@@ -1,0 +1,323 @@
+#
+server.modules = (
+        "mod_access",
+        "mod_accesslog",
+        "mod_vhost_magnet",
+        "mod_expire",
+		#"mod_firewall",
+        #"mod_error_redirect",
+        "mod_deflate",
+        "mod_compress",
+        #"mod_rewrite"
+        #"mod_status",
+        "mod_proxy_core",
+        "mod_proxy_backend_fastcgi",
+        "mod_setenv",
+        )
+
+##### 基本设置
+# 基准路径，请修改这里
+var.rundir = "/home/bae/instanceall/instance0//lighttpd"
+var.bindir = "/home/bae/instanceall/instance0//lighttpd"
+var.wwwdir = "/home/bae/instanceall/instance0/" + "/codefs"
+server.port                = 8300
+#include 	var.rundir + "/conf/user.conf"
+#include 	var.rundir + "/conf/instance.conf"
+# net path的路径
+#var.netpath ="10.26.40.33:9898/log 10.36.24.14:9898/log 10.26.40.33:9898/log 10.36.24.14:9898/log 10.26.40.33:9898/log 10.36.24.14:9898/log 10.81.51.16:9898/log 10.65.23.67:9898/log"
+#var.netpath ="10.26.40.33:9898/log 10.36.24.14:9898/log 10.26.40.33:9898/log 10.36.24.14:9898/log 10.26.40.33:9898/log 10.36.24.14:9898/log 10.26.102.28:9898/log 10.26.102.29:9898/log 10.38.139.13:9898/log 10.38.139.33:9898/log 10.26.102.28:9898/log 10.26.102.29:9898/log 10.38.139.13:9898/log 10.38.139.33:9898/log 10.26.102.28:9898/log 10.26.102.29:9898/log 10.38.139.13:9898/log 10.38.139.33:9898/log 10.26.102.28:9898/log 10.26.102.29:9898/log 10.38.139.13:9898/log 10.38.139.33:9898/log 10.26.102.28:9898/log 10.26.102.29:9898/log 10.38.139.13:9898/log 10.38.139.33:9898/log 10.38.139.13:9898/log 10.38.139.33:9898/log"
+var.netpath = "127.0.0.1:9900/log"
+var.netpath_static = "127.0.0.1:9901/log"
+# 绑定的端口
+
+
+# event-handler, 设置为linux-sysepoll
+server.event-handler = "linux-sysepoll"
+
+# network-backend, 设置为linux-sendfile
+server.network-backend = "linux-sendfile"
+
+# PID-file的路径
+server.pid-file            = var.rundir + "/log/lighttpd.pid"
+
+# change uid to <uid> (default: don't care)
+server.username            = "bae"
+
+# change uid to <uid> (default: don't care)
+server.groupname           = "bae"
+
+# 限制HTTP请求的头部的大小，如果头部太长，直接返回400错误，不予处理
+# 如果配置值为0，则不限制请求头部的大小, 单位kb
+# 默认值是0
+server.max-header-size = 8
+
+# 全局的最大连接数
+server.max-connections = 65535
+
+# 让lighttpd能core出来, 默认值是"disable"
+server.core-files = "enable"
+
+# 错误跳转, 推荐使用mod_error_redirect
+# 使用手册 http://com.baidu.com/twiki/bin/view/Gm/LighttpdMod_ErrorRedirect
+
+# status - 错误页 映射关系
+#error-redirect.rules = ( 404 => "http://bae.baidu.com/error.html",
+#                         500 => "http://bae.baidu.com/error.html" )
+
+# 默认的错误跳转页
+#error-redirect.default-location = "http://bae.baidu.com/error.html"
+
+# 本地错误页面
+# 需要在相应的路径下放置html文件，要设置正确的前缀名(按server.errorfile-prefix的设定)
+#server.errorfile-prefix    = "/home/work/lighttpd/error/error-"
+
+# DOCDUMENT-ROOT, 静态文件和php源文件请放在此目录下
+server.document-root        = var.wwwdir
+
+# 错误文件的前缀,如404 则访问 errorfile-prefix + 404.html
+server.errorfile-prefix    = var.wwwdir + "/status-"
+
+#status.status-url = "/server-status"
+#status.config-url = "/server-config"
+#status.statistics-url = "/server-statistics"
+
+# vhost配置
+# 设置虚拟主机默认路径为 = server-root + hostname + document-root
+# 如果上面的路径不存在则 = server-root + default-host + document-root
+#simple-vhost.server-root = server.document-root
+#simple-vhost.default-host = "bae.baidu.com"
+#simple-vhost.document-root = "/"
+
+$HTTP["host"] =~ "^(.*)$" {
+    vhost-magnet.path-pattern = var.wwwdir + "/%_"
+
+    # 和mod_write 一个级别，在url解析之前
+    # vhost-magnet.attract-raw-url-to = ( "/index.lua" )
+    # 当doc-root 已知和physical-path设置完
+    vhost-magnet.attract-raw-url-to = ( "/bae_app_conf.lua" )
+    # 获取相应头部时候的操作
+    # vhost-magnet.attract-response-header-to = ( "/error.lua" )
+}
+
+
+# files to check for if .../ is requested
+index-file.names            = ( "index.htm", "index.html",
+                                "index.php", "default.htm",
+            			        "index.wml")
+
+# 添加mimetype 映射文件， 后缀名 => Content-Type
+include  var.rundir + "/conf/mime.types"
+
+# 每次keep-alive 的最大请求数, 默认值是16
+server.max-keep-alive-requests = 16
+
+# keep-alive的最长等待时间, 单位是秒，默认值是5
+server.max-keep-alive-idle = 5
+
+# lighttpd的work子进程数，默认值是0，单进程运行
+server.max-worker = 0
+
+# 限制用户在发送请求的过程中，最大的中间停顿时间(单位是秒)，
+# 如果用户在发送请求的过程中(没发完请求)，中间停顿的时间太长，lighttpd会主动断开连接
+# 默认值是60(秒)
+server.max-read-idle = 60
+
+# 限制用户在接收应答的过程中，最大的中间停顿时间(单位是秒)，
+# 如果用户在接收应答的过程中(没接完)，中间停顿的时间太长，lighttpd会主动断开连接
+# 默认值是360(秒)
+server.max-write-idle = 360
+
+# 读客户端请求的超时限制，单位是秒, 配为0表示不作限制
+server.read-timeout = 720
+
+# 写应答页面给客户端的超时限制，单位是秒，配为0表示不作限制
+server.write-timeout = 2400
+
+# 请求的处理时间上限，如果用了mod_proxy_core，那就是和后端的交互时间限制, 单位是秒
+server.max-connection-idle = 60
+
+# 所在机房
+#setenv.add-request-header = (
+#      "X-Location" => "tc"
+#	      )
+
+#### 日志设置
+
+# cronolog的路径 
+var.cronolog_path = var.rundir + "/bin/cronolog"
+
+# 错误日志，用cronlog做自动切割
+server.errorlog = "| "+var.rundir+"/bin/comlog_apache --nettype=NETCP --switchcnt=1000 --netpath=\""+var.netpath+"\" --netauth=lighttpd --netfile=net_lighttpd.log.wf --localopen=1 --locallogsize=10240 --localpath="+var.rundir+"/log --localfile=lighttpd.log.wf --localcuttime=0"
+
+# errorlog的级别：1--FATAL, 2--WARNING, 4--NOTICE, 8--TRACE, 16--DEBUG
+# 默认值是4 (NOTICE)
+server.errorlog-level = 4
+
+# accesslog 模块
+# accesslog的文件名，用cronlog做自动切割
+
+# accesslog的内容格式
+accesslog.filename = "| "+var.rundir+"/bin/comlog_apache --nettype=NETCP --switchcnt=1000 --netpath=\""+var.netpath_static+"\" --netauth=lighttpd --netfile=net_lighttpd_static.log --localopen=1 --locallogsize=10240 --localpath="+var.rundir+"/log --localfile=lighttpd_static.log --localcuttime=0"
+
+$HTTP["url"] =~ "(\.php|\.html|\.htm|\.shtml|\.wml)$" {
+	accesslog.filename = "| "+var.rundir+"/bin/comlog_apache --nettype=NETCP --switchcnt=1000 --netpath=\""+var.netpath+"\" --netauth=lighttpd --netfile=net_lighttpd.log --localopen=1 --locallogsize=10240 --localpath="+var.rundir+"/log --localfile=lighttpd.log --localcuttime=0"
+}
+
+accesslog.format = "%{CLIENTIP}i %V %u %t %>s %I %B %D 0 0 0 %{SERVER-ADDR}e - %{BAE_ENV_APPID}i - - - - - - - \"%r\" \"%{Referer}i\" \"%{User-Agent}i\" %{Cookie}i"
+
+
+# 生成ETag的时候是否考虑文件的inode
+etag.use-inode = "disable"
+
+# 生成ETag的时候是否考虑文件的mtime
+etag.use-mtime = "enable"
+
+# 生成ETag的时候是否考虑文件的size
+etag.use-size  = "enable"
+
+
+#### 压缩
+# 动态内容压缩使用mod_deflate
+
+# 是否启用deflate压缩, 默认值是enable
+deflate.enabled = "disable" 
+
+# 压缩等级: 1~9，默认值是9
+#deflate.compression-level = 9
+
+# mem-level, 默认值是9
+#deflate.mem-level = 9
+
+# 压缩窗口， 默认值是15
+#deflate.window-size = 15
+
+# 支持的压缩算法
+#deflate.allowed_encodings = ( "gzip")
+
+# 最小的压缩size，如果output data的size小于这个值，就不进行压缩
+# 默认值是0
+#deflate.min-compress-size = 200
+
+# 一次压缩的KByte数, 默认值是2048
+#deflate.work-block-size = 512
+
+# 输出缓冲区的大小，默认值是0
+#deflate.output-buffer-size = 8192
+
+# 指定哪些Content-Type 才需要压缩
+#deflate.mimetypes = ("text/html", "text/plain", "text/css", "text/javascript", "text/xml")
+
+# 是否打印deflate的运行日志，默认值是disable
+#deflate.debug = "disable" 
+
+
+## 静态文件推荐用mod_compress来压缩
+
+# compress 的编码方式
+compress.allowed-encodings = ("bzip2", "gzip", "deflate")
+
+# compress 的cache路径
+compress.cache-dir = var.rundir + "/cache"
+
+# 对哪些Content-Type进行压缩
+compress.filetype = ("text/css", "text/html", "text/javascript", "text/xml", "text/plain")
+
+#### 用mod_proxy_core + fastcgi 做 php转发
+
+# mod-proxy-core module
+# read mod-proxy-core.txt for more info
+# for PHP don't forget to set cgi.fix_pathinfo = 1 in the php.ini
+$HTTP["url"] =~ "\.php$" {
+#    accesslog.format = "%{CLIENTIP}i %V %u %t %>s %I %B %D %{X-ITEM-CPU-TIME}e %{X-ITEM-MEMORY}e %{X-ITEM-PEAK-MEMORY}e %{SERVER-ADDR}e %{X-ITEM-PHP-IP}e \"%r\" \"%{Referer}i\" \"%{User-Agent}i\" %{Cookie}i"
+	accesslog.format = "%{CLIENTIP}i %V %u %t %>s %I %B %D %{X-ITEM-CPU-TIME}e %{X-ITEM-MEMORY}e %{X-ITEM-PEAK-MEMORY}e %{SERVER-ADDR}e %{X-ITEM-PHP-IP}e %{BAE_ENV_APPID}i %{X-ITEM-MC-IN-BYTES-PER-REQ}e %{X-ITEM-MC-OUT-BYTES-PER-REQ}e %{X-ITEM-MC-NUM-GET}e %{X-ITEM-MC-NUM-SET-REP-ADD}e %{X-ITEM-CURL-RECV-BYTES-PER-REQ}e %{X-ITEM-CURL-SENT-BYTES-PER-REQ}e %{X-ITEM-CURL-EXEC-NUM}e \"%r\" \"%{Referer}i\" \"%{User-Agent}i\" %{Cookie}i"
+  deflate.enabled = "enable" 
+  deflate.mimetypes = ("text/html", "text/plain", "text/css", "text/javascript", "text/xml")
+  compress.allowed-encodings = ()
+
+  #后端均衡算法
+  proxy-core.balancer = "static"
+
+  #识别并处理后端返回的"X-xxx"头部
+  proxy-core.allow-x-sendfile = "enable"
+  proxy-core.allow-x-rewrite = "enable"
+
+  #后端转发协议
+  proxy-core.protocol = "fastcgi"
+
+  #后端地址列表，如果是在同一台机器上部署，推荐使用unix域socket
+  proxy-core.backends = ( "127.0.0.1:8200" )
+  #proxy-core.backends = ( "unix:/tmp/php-fastcgi.socket" )
+
+  # 单个后端地址的并发连接数，
+  # 如果是一对一的连接模型，应当和后端的 进程数/线程数 保持一致
+  proxy-core.max-pool-size = 100 
+
+  # 是否打印mod_proxy_core的运行日志信息
+  proxy-core.debug = 0
+
+  # 当发生连接错误时，封禁该后端的时间(单位: 秒)
+  proxy-core.disable-time = 0
+
+  # connect超时限制
+  proxy-core.connect-timeout = 5
+  
+  # 最大重试次数
+  proxy-core.max-retry = 0
+  #单应用占用的最大后端连接
+  app_firewall.max_backend_conn = 10
+}
+
+
+#### 杂项
+#  在HTTP response中显示的"Server"值
+#  下面的例子的效果是:
+#  Server: lighttpd 
+server.tag = "BWS/1.0"
+
+## deny access the file-extensions
+#
+# ~    is for backupfiles from vi, emacs, joe, ...
+# .inc is often used for code includes which should in general not be part
+#      of the document-root
+url.access-deny = ( "~", ".inc", ".bak", ".sql", ".lua" )
+
+# which extensions should not be handle via static-file transfer
+# .php, .pl, .fcgi are most often handled by mod_proxy_core or mod_cgi
+static-file.exclude-extensions = ( ".php", ".pl", ".fcgi" )
+
+#### 全局的firewall 防攻击
+# mod_firewall的使用手册： http://com.baidu.com/twiki/bin/view/Gm/LighttpdMod_Firewall
+#$HTTP["url"] =~ "\.php$" {
+  # domain封禁文件的路径
+# firewall.domain-blacklist = var.rundir + "/conf/domain_blacklist"
+#  firewall.domain-whitelist = var.rundir + "/conf/domain_whitelist"
+#  firewall.domain-whitelist-bak = var.rundir + "/conf/domain_whitelist_manual"
+
+  # domain黑名单的检查时间间隔(单位是秒)，如果发现文件被更新了，自动重载
+  # 默认值是30(秒)
+#  firewall.domainlist-refresh-idle = 10
+# firewall.ip-blacklist = var.rundir + "/conf/blacklist"
+# firewall.ip-whitelist = var.rundir + "/conf/innocent"
+# firewall.iplist-refresh-idle = 30
+  
+# firewall.ip-sensor-enabled = "enable"
+# firewall.ip-sensor-threshold-pairs = (10=>1000, 60=>6000, 600=>60000)
+# firewall.ip-sensor-buckets-size = 131071
+# firewall.ip-sensor-trigger-idle = 30
+#} 
+#else $HTTP["url"] =~ "^/" {
+# firewall.domain-blacklist = var.rundir + "/conf/domain_blacklist"
+#  firewall.domain-whitelist = var.rundir + "/conf/domain_whitelist"
+#  firewall.domain-whitelist-bak = var.rundir + "/conf/domain_whitelist_manual"
+# firewall.domainlist-refresh-idle = 10
+#
+# firewall.ip-blacklist = var.rundir + "/conf/blacklist"
+# firewall.ip-whitelist = var.rundir + "/conf/innocent"
+# firewall.iplist-refresh-idle = 30
+  
+# firewall.ip-sensor-enabled = "enable"
+# firewall.ip-sensor-threshold-pairs = (10=>3000, 60=>18000, 600=>180000)
+# firewall.ip-sensor-buckets-size = 131071
+# firewall.ip-sensor-trigger-idle = 30
+#}
+
