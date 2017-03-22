@@ -23,9 +23,7 @@ _init_env()
         mkdir -p /home/bae/app/
         chown bae:bae -R /home/bae/app
     fi
-    if [ ! -f /home/bae/app/bae_app_conf.lua ]; then
-        echo 'return 0' > /home/bae/app/bae_app_conf.lua
-    fi
+
     if [ ! -d /home/admin/cert ]; then
             rm -rf /home/admin/runtime/lighttpd/conf/conf.d/50-https.conf
     fi
@@ -45,6 +43,10 @@ _init_env()
     else
         sed -i 's/#//g' /home/admin/runtime/lighttpd/conf/conf.d/15-mod_vhost_magnet.conf   #恢复lua的配置
         sed -i "s&$USE_USERLIGHTTPD_CONF_CMD&$NOUSE_USERLIGHTTPD_CONF_CMD&g"    /home/admin/runtime/lighttpd/conf/lighttpd.conf #使用用户自定义的lighttpd配置
+        if [ ! -f /home/bae/app/bae_app_conf.lua ]; then
+            # 如果不存在lua则生成空的lua
+            echo 'return 0' > /home/bae/app/bae_app_conf.lua
+        fi
     fi
 
     touch /home/bae/log/slowlog.log
