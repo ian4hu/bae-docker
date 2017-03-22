@@ -1,0 +1,10 @@
+prefix=/home/admin/php
+exec_prefix=/home/admin/php
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: ming
+Description: Ming - a SWF output library
+Version: 0.4.5
+Libs: -L${libdir} -lming
+Cflags: -I${includedir}
