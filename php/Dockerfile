@@ -1,4 +1,4 @@
-FROM holy4god/bae:v3-static
+FROM holy4god/bae-docker:v3-static
 
 COPY . /home/admin/php
 
